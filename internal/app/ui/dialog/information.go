@@ -18,6 +18,7 @@ func (TypeInformation) HasCloseButton() bool {
 }
 
 func (t TypeInformation) Process() {
+	//*
 	imgui.Text(t.Information)
 	imgui.Separator()
 	if imgui.Button("OK") {

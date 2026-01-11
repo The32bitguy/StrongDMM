@@ -108,6 +108,34 @@ func (sp *saveProcess) sanitizeVariables() {
 	}
 }
 
+func (sp *saveProcess) removeUndefinedVariables() {
+	log.Print("checking for undefined variables to remove...")
+
+	for _, tile := range sp.dmm.Tiles {
+		for _, instance := range tile.Instances() {
+			prefab := instance.Prefab()
+			if prefab.Vars().Len() == 0 {
+				continue
+			}
+
+			obj := sp.dme.Objects[prefab.Path()]
+			vars := prefab.Vars()
+
+			for _, varName := range prefab.Vars().Iterate() {
+				// "", false is returned if undefined.
+				if _, ok := obj.Vars.Value(varName); !ok {
+					vars = dmvars.Delete(vars, varName)
+				}
+
+				if prefab.Vars().Len() != vars.Len() {
+					instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
+					log.Printf("instance sanitized(undef variable edit): [%d#%s#%s]", instance.Id(), prefab.Path(), varName)
+				}
+			}
+		}
+	}
+}
+
 // Go through the dmm tiles and try to find a key in the initial map with the same content.
 func (sp *saveProcess) handleReusedKeys() {
 	log.Print("handle reused keys...")

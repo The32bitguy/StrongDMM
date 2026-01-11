@@ -104,7 +104,14 @@ func tileIndex(maxX, maxY, x, y, z int) int {
 	return maxX*maxY*(z-1) + maxX*(y-1) + (x - 1)
 }
 
-func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*dmmprefab.Prefab) {
+type UndefinedVar struct {
+	Path     string
+	VarName  string
+	VarValue interface{}
+	X, Y, Z  int
+}
+
+func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*dmmprefab.Prefab, UndefinedVars []UndefinedVar) {
 	unknownPrefabs = make(map[string]*dmmprefab.Prefab)
 	dmm = &Dmm{
 		Name:  filepath.Base(data.Filepath),
@@ -129,6 +136,19 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 							prefab.Vars().LinkParent(obj.Vars)
 						}
 						tile.InstancesAdd(PrefabStorage.Put(prefab))
+						for _, varName := range prefab.Vars().Iterate() {
+							//if the value does not exist it gives "", false. Hence _, exists
+							if _, exists := obj.Vars.Value(varName); !exists {
+								prefVal, _ := prefab.Vars().Value(varName)
+								UndefinedVars = append(UndefinedVars, UndefinedVar{
+									Path:     prefab.Path(),
+									VarName:  varName,
+									VarValue: prefVal,
+									X:        x, Y: y, Z: z,
+								})
+								log.Printf("undefined var edit:%s,  %s", prefab.Path(), prefVal)
+							}
+						}
 					} else {
 						log.Print("unknown prefab:", prefab.Path())
 						unknownPrefabs[prefab.Path()] = prefab
@@ -140,7 +160,7 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 		}
 	}
 
-	return dmm, unknownPrefabs
+	return dmm, unknownPrefabs, UndefinedVars
 }
 
 // PersistPrefabs persists all prefabs from instances on the current map.
