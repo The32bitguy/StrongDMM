@@ -1,8 +1,8 @@
 package dmmap
 
 import (
+	"fmt"
 	"path/filepath"
-
 	"sdmm/internal/dmapi/dmmap/dmmdata/dmmprefab"
 
 	"sdmm/internal/dmapi/dmenv"
@@ -105,10 +105,11 @@ func tileIndex(maxX, maxY, x, y, z int) int {
 }
 
 type UndefinedVar struct {
-	Path     string
-	VarName  string
-	VarValue interface{}
-	X, Y, Z  int
+	Path       string
+	VarName    string
+	VarValue   string
+	X, Y, Z    int
+	PrefabInfo uint64
 }
 
 func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*dmmprefab.Prefab, UndefinedVars []UndefinedVar) {
@@ -136,19 +137,21 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 							prefab.Vars().LinkParent(obj.Vars)
 						}
 						tile.InstancesAdd(PrefabStorage.Put(prefab))
-						for _, varName := range prefab.Vars().Iterate() {
+						for _, varName := range prefab.Vars().Iterate() { //start of undef
 							//if the value does not exist it gives "", false. Hence _, exists
 							if _, exists := obj.Vars.Value(varName); !exists {
 								prefVal, _ := prefab.Vars().Value(varName)
 								UndefinedVars = append(UndefinedVars, UndefinedVar{
 									Path:     prefab.Path(),
 									VarName:  varName,
-									VarValue: prefVal,
+									VarValue: fmt.Sprintf("%v", prefVal),
 									X:        x, Y: y, Z: z,
+									PrefabInfo: uint64(tile.instances[len(tile.instances)-1].Id()),
 								})
+
 								log.Printf("undefined var edit:%s,  %s", prefab.Path(), prefVal)
 							}
-						}
+						} //end
 					} else {
 						log.Print("unknown prefab:", prefab.Path())
 						unknownPrefabs[prefab.Path()] = prefab

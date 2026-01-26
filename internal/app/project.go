@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"sdmm/third_party/sdmmparser"
-	"time"
 	"sort"
+	"time"
 
 	"sdmm/internal/app/ui/cpwsarea/workspace"
 	"sdmm/internal/app/ui/dialog"
@@ -226,7 +226,7 @@ func (a *app) loadMap(path string, workspace *workspace.Workspace) {
 		log.Print("ignoring map path add to the recent, since it's an outside resource")
 	}
 
-	dmm, unknownPrefabs := dmmap.New(a.loadedEnvironment, data, a.backupMap(path))
+	dmm, unknownPrefabs, UndefinedVariables := dmmap.New(a.loadedEnvironment, data, a.backupMap(path))
 	if a.layout.WsArea.OpenMap(dmm, workspace) {
 		a.layout.Prefabs.Sync()
 
@@ -256,7 +256,29 @@ func (a *app) loadMap(path string, workspace *workspace.Workspace) {
 				),
 			})
 		}
+		if len(UndefinedVariables) != 0 {
+			var undefinedVariablesFormatted []string
+			for _, undef := range UndefinedVariables {
+				undefinedVariablesFormatted = append(undefinedVariablesFormatted, fmt.Sprintf("[%d,%d,%d] %s,  %s", undef.X, undef.Y, undef.Z, undef.Path, undef.VarName))
+			}
+			/*dialog.Open(dialog.TypeJumpTo{
+				Title: "Undefined Variables",
+				Information: fmt.Sprintf(
+					"There are instances with undefined variables: %s\n"+
+						"Variable edits below will be discarded on save:\n"+
+						"%s", dmm.Name, undefinedVariablesFormatted,
+				),
+				UndefinedVars: UndefinedVariables,
+				OnJump: func(x, y, z int) {
+					// Here 's.app' is the instance, so 'CurrentEditor()' works without arguments
+					a.CurrentEditor().FocusCameraOnPosition(util.Point{X: x, Y: y, Z: z})
+				},
+			})*/
+			a.layout.Missing.UndefinedVars = UndefinedVariables
+			//a.layout.ShowMissingNode()
+		}
 	}
+
 	a.layout.Search.Free()
 
 	runtime.GC()
