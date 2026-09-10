@@ -1,7 +1,6 @@
 package dmmap
 
 import (
-	"fmt"
 	"path/filepath"
 	"sdmm/internal/dmapi/dmmap/dmmdata/dmmprefab"
 
@@ -112,7 +111,12 @@ type UndefinedVar struct {
 	PrefabInfo uint64
 }
 
-func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*dmmprefab.Prefab, UndefinedVars []UndefinedVar) {
+type UnknownType struct {
+	Path    string
+	X, Y, Z int
+}
+
+func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*dmmprefab.Prefab) {
 	unknownPrefabs = make(map[string]*dmmprefab.Prefab)
 	dmm = &Dmm{
 		Name:  filepath.Base(data.Filepath),
@@ -124,12 +128,10 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 
 		Backup: backup,
 	}
-
 	for z := 1; z <= data.MaxZ; z++ {
 		for y := 1; y <= data.MaxY; y++ {
 			for x := 1; x <= data.MaxX; x++ {
 				tile := Tile{Coord: util.Point{X: x, Y: y, Z: z}}
-
 				for _, prefab := range data.Dictionary[data.Grid[tile.Coord]] {
 					if obj, ok := dme.Objects[prefab.Path()]; ok {
 						// Prefabs from the dmmdata don't know about environment objects.
@@ -137,21 +139,6 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 							prefab.Vars().LinkParent(obj.Vars)
 						}
 						tile.InstancesAdd(PrefabStorage.Put(prefab))
-						for _, varName := range prefab.Vars().Iterate() { //start of undef
-							//if the value does not exist it gives "", false. Hence _, exists
-							if _, exists := obj.Vars.Value(varName); !exists {
-								prefVal, _ := prefab.Vars().Value(varName)
-								UndefinedVars = append(UndefinedVars, UndefinedVar{
-									Path:     prefab.Path(),
-									VarName:  varName,
-									VarValue: fmt.Sprintf("%v", prefVal),
-									X:        x, Y: y, Z: z,
-									PrefabInfo: uint64(tile.instances[len(tile.instances)-1].Id()),
-								})
-
-								log.Printf("undefined var edit:%s,  %s", prefab.Path(), prefVal)
-							}
-						} //end
 					} else {
 						log.Print("unknown prefab:", prefab.Path())
 						unknownPrefabs[prefab.Path()] = prefab
@@ -163,7 +150,7 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 		}
 	}
 
-	return dmm, unknownPrefabs, UndefinedVars
+	return dmm, unknownPrefabs
 }
 
 // PersistPrefabs persists all prefabs from instances on the current map.
