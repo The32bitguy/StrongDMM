@@ -220,11 +220,15 @@ func (v *VarEditor) isCurrentVarInitial(varName string) bool {
 func (v *VarEditor) correctVarIssue(varValue string) string {
 	isList, isString := strings.HasPrefix(varValue, "list("), strings.HasPrefix(varValue, `"`)
 	enclosingCharacter := ""
+	openingCharacter := ""
 	hasIssue := false
 	if isString {
 		//we start and end with a quotation mark so we probably shouldnt break
 		enclosingCharacter = `"`
 		hasIssue = !strings.HasSuffix(varValue, enclosingCharacter)
+	} else if strings.HasSuffix(varValue, `"`) {
+		openingCharacter = `"`
+		hasIssue = true
 	} else if isList {
 		//if list is enclosed
 		enclosingCharacter = `)`
@@ -232,7 +236,7 @@ func (v *VarEditor) correctVarIssue(varValue string) string {
 	}
 
 	if hasIssue {
-		varValue = varValue + enclosingCharacter
+		varValue = openingCharacter + varValue + enclosingCharacter
 	}
 
 	return varValue
