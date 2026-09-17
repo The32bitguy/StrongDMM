@@ -230,25 +230,25 @@ func (v *VarEditor) correctVarIssue(varValue string) string {
 		//if list is enclosed
 		enclosingCharacter = `)`
 		hasIssue = !strings.HasSuffix(varValue, enclosingCharacter)
+
+		if strings.Count(varValue, `"`)%2 != 0 {
+			strippedListString := strings.TrimPrefix(varValue, "list(")
+			strippedListString = strings.TrimPrefix(strippedListString, ")")
+			strippedList := strings.Split(strippedListString, ",")
+			for i := 0; i < len(strippedList); i++ {
+				if strings.Count(strippedList[i], `"`)%2 != 0 {
+					strippedList[i] = strings.Trim(strippedList[i], `"`)
+					strippedList[i] = `"` + strippedList[i] + `"`
+				}
+			}
+			varValue = `list(` + strings.Join(strippedList, `,`) //enclosing chara is ) from above
+		}
 	}
 
 	if !isList && !hasIssue && strings.Count(varValue, `"`)%2 != 0 {
 		enclosingCharacter = ``
 		openingCharacter = `"`
 		hasIssue = true
-	}
-
-	if isList && strings.Count(varValue, `"`)%2 != 0 {
-		strippedListString := strings.TrimPrefix(varValue, "list(")
-		strippedListString = strings.TrimPrefix(strippedListString, ")")
-		strippedList := strings.Split(strippedListString, ",")
-		for i := 0; i < len(strippedList); i++ {
-			if strings.Count(strippedList[i], `"`)%2 != 0 {
-				strippedList[i] = strings.Trim(strippedList[i], `"`)
-				strippedList[i] = `"` + strippedList[i] + `"`
-			}
-		}
-		varValue = `list(` + strings.Join(strippedList, `,`) //enclosing chara is ) from above
 	}
 
 	if hasIssue {
