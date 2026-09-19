@@ -227,24 +227,44 @@ func (v *VarEditor) correctVarIssue(varValue string) string {
 		enclosingCharacter = `"`
 		hasIssue = !strings.HasSuffix(varValue, enclosingCharacter)
 	} else if isList {
-		//if list is enclosed
+
 		enclosingCharacter = `)`
 		hasIssue = !strings.HasSuffix(varValue, enclosingCharacter)
 
-		if strings.Count(varValue, `"`)%2 != 0 {
-			strippedListString := strings.TrimPrefix(varValue, "list(")
-			strippedListString = strings.TrimPrefix(strippedListString, ")")
-			strippedList := strings.Split(strippedListString, ",")
-			for i := 0; i < len(strippedList); i++ {
+		remakeList := false
+		strippedListString := strings.TrimPrefix(varValue, "list(")
+		strippedListString = strings.TrimSuffix(strippedListString, ")")
+		strippedList := strings.Split(strippedListString, ",")
+
+		for i := 0; i < len(strippedList); i++ {
+			if strings.Contains(strippedList[i], "=") { //associative lists
+				parts := strings.SplitN(strippedList[i], "=", 2)
+
+				for j, part := range parts {
+					if strings.Count(part, `"`)%2 != 0 {
+						remakeList = true
+						parts[j] = strings.ReplaceAll(parts[j], `"`, ``)
+						parts[j] = strings.ReplaceAll(parts[j], ` `, ``)
+						parts[j+1] = strings.ReplaceAll(parts[j+1], ` `, ``)
+						parts[j] = `"` + parts[j] + `"`
+						strippedList[i] = strings.Join(parts, " = ")
+					}
+				}
+			} else {
 				if strings.Count(strippedList[i], `"`)%2 != 0 {
+					remakeList = true
 					strippedList[i] = strings.Trim(strippedList[i], `"`)
 					strippedList[i] = `"` + strippedList[i] + `"`
 				}
 			}
+		}
+
+		if remakeList {
+			hasIssue = true
 			varValue = `list(` + strings.Join(strippedList, `,`) //enclosing chara is ) from above
 		}
 	}
-
+	//slap another " on to avoid parse failure
 	if !isList && !hasIssue && strings.Count(varValue, `"`)%2 != 0 {
 		enclosingCharacter = ``
 		openingCharacter = `"`
