@@ -239,14 +239,6 @@ func (a *app) DoUndefinedWindow() {
 	}
 }
 
-// DoResetLayout resets application windows to their initial positions.
-func (a *app) DoUnknownTypesWindow() {
-	a.layout.Missing.UndefinedVars = a.layout.Missing.LookForUndefinedVariables(a.loadedEnvironment, a.CurrentEditor().Dmm())
-	if len(a.layout.Missing.UndefinedVars) == 0 {
-		a.layout.Missing.OpenNothingMissingWindow()
-	}
-}
-
 // DoOpenChangelog opens "changelog" workspace.
 func (a *app) DoOpenChangelog() {
 	log.Print("open changelog")

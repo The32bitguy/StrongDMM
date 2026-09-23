@@ -2,6 +2,7 @@ package cpmissing
 
 import (
 	"fmt"
+	"log"
 	"sdmm/internal/app/command"
 	"sdmm/internal/dmapi/dmmap" //for the undefinedvars struct
 	"sdmm/internal/dmapi/dmmap/dmmdata/dmmprefab"
@@ -14,7 +15,6 @@ import (
 )
 
 func (m *Missing) Process(int32) {
-
 	m.ShowControls()
 }
 
@@ -31,9 +31,13 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 					wsName := m.app.CurrentEditor().Dmm().Name
 					vars = dmvars.Delete(vars, varName)
 					instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
+
 					//m.app.SyncPrefabs()
 					m.app.SyncVarEditor()
-
+					if m.app.CurrentEditor() != nil {
+						m.app.CurrentEditor().FocusCameraOnPosition(instance.Coord())
+					}
+					m.app.CurrentEditor().InstanceSelect(instance)
 					m.UndefinedVars = append(m.UndefinedVars[:i], m.UndefinedVars[i+1:]...)
 
 					if wsVars, exists := m.WorkSpaceVars[wsName]; exists {
@@ -59,6 +63,8 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 						instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
 						//m.app.SyncPrefabs()
 						m.app.SyncVarEditor()
+						//m.app.CurrentEditor().FocusCameraOnPosition(instance.Coord())
+						//m.app.CurrentEditor().InstanceSelect(instance)
 						m.UndefinedVars = append(m.UndefinedVars[:i], append([]dmmap.UndefinedVar{undef}, m.UndefinedVars[i:]...)...)
 
 						if m.WorkSpaceVars == nil {
@@ -72,6 +78,8 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 						instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
 						//m.app.SyncPrefabs()
 						m.app.SyncVarEditor()
+						//m.app.CurrentEditor().FocusCameraOnPosition(instance.Coord())
+						//m.app.CurrentEditor().InstanceSelect(instance)
 						m.UndefinedVars = append(m.UndefinedVars[:i], m.UndefinedVars[i+1:]...)
 
 						if wsVars, exists := m.WorkSpaceVars[wsName]; exists {
@@ -92,6 +100,52 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 				}
 			}
 		}
+	}
+}
+
+func (m *Missing) removeUnknownPrefabEntry(undef dmmap.UndefinedVar, i int) {
+	tile := m.app.CurrentEditor().Dmm().GetTile(util.Point{X: undef.X, Y: undef.Y, Z: undef.Z})
+	replacementPrefab, prefabSelected := m.app.CurrentEditor().SelectedPrefab()
+	if prefabSelected == true {
+		tile.InstancesAdd(replacementPrefab)
+		tile.InstancesRegenerate()
+		if m.app.CurrentEditor() != nil {
+			m.app.CurrentEditor().UpdateCanvasByCoords([]util.Point{tile.Coord})
+		}
+		m.UndefinedVars = append(m.UndefinedVars[:i], m.UndefinedVars[i+1:]...)
+		if len(m.UndefinedVars) != 0 {
+			m.WorkSpaceVars[undef.MapName] = m.UndefinedVars
+		} else {
+			delete(m.WorkSpaceVars, m.app.CurrentEditor().Dmm().Name)
+		}
+		//registers the redo and undo
+		m.app.CommandStorage().Push(command.Make("Replaced Unknown Type", func() {
+			tile.InstancesRemoveByInstance(tile.Instances()[len(tile.Instances())-1])
+			tile.InstancesRegenerate()
+			if m.app.CurrentEditor() != nil {
+				m.app.CurrentEditor().UpdateCanvasByCoords([]util.Point{tile.Coord})
+			}
+			m.UndefinedVars = append(m.UndefinedVars[:i], append([]dmmap.UndefinedVar{undef}, m.UndefinedVars[i:]...)...)
+			if len(m.UndefinedVars) != 0 {
+				m.WorkSpaceVars[undef.MapName] = m.UndefinedVars
+			} else {
+				delete(m.WorkSpaceVars, m.app.CurrentEditor().Dmm().Name)
+			}
+
+		}, func() {
+			tile.InstancesAdd(replacementPrefab)
+			tile.InstancesRegenerate()
+			if m.app.CurrentEditor() != nil {
+				m.app.CurrentEditor().UpdateCanvasByCoords([]util.Point{tile.Coord})
+			}
+			m.UndefinedVars = append(m.UndefinedVars[:i], m.UndefinedVars[i+1:]...)
+			if len(m.UndefinedVars) != 0 {
+				m.WorkSpaceVars[undef.MapName] = m.UndefinedVars
+			} else {
+				delete(m.WorkSpaceVars, m.app.CurrentEditor().Dmm().Name)
+			}
+		}))
+		log.Printf("test")
 	}
 }
 
@@ -123,14 +177,30 @@ func (m *Missing) ShowControls() {
 			imgui.TableSetColumnIndex(3)
 			imgui.BeginGroup()
 			buttonLabelJump := fmt.Sprintf(icon.Search+"##%d", i)
-			buttonLabelNull := fmt.Sprintf(icon.Clear+"##%d", i)
+			buttonLabelNullorReplace := fmt.Sprintf(icon.Clear+"##%d", i)
+			if undef.VarName == "MISSINGPREFAB" {
+				buttonLabelNullorReplace = fmt.Sprintf(icon.Repeat+"##%d", i)
+			}
 			w.Layout{
 				w.Button(buttonLabelJump, func() {
-					m.app.CurrentEditor().FocusCameraOnPosition(util.Point{X: undef.X, Y: undef.Y, Z: undef.Z})
+					if m.app.CurrentEditor() != nil {
+						m.app.CurrentEditor().FocusCameraOnPosition(util.Point{X: undef.X, Y: undef.Y, Z: undef.Z})
+					}
+					jumptile := m.app.CurrentEditor().Dmm().GetTile(util.Point{X: undef.X, Y: undef.Y, Z: undef.Z})
+					for _, instance := range jumptile.Instances() {
+						if instance.Id() == undef.PrefabInfo {
+							m.app.CurrentEditor().InstanceSelect(instance)
+						}
+					}
 				}).Small(true),
 				w.SameLine(),
-				w.Button(buttonLabelNull, func() {
-					m.removeUndefinedVariableFromPrefab(undef, i)
+				w.Button(buttonLabelNullorReplace, func() {
+					if undef.VarName == "MISSINGPREFAB" {
+						m.removeUnknownPrefabEntry(undef, i)
+					} else {
+						m.removeUndefinedVariableFromPrefab(undef, i)
+					}
+
 				}).Small(true),
 			}.Build()
 			imgui.EndGroup()
@@ -138,10 +208,12 @@ func (m *Missing) ShowControls() {
 		}
 		imgui.EndTable()
 		if imgui.Button("Dismiss") {
-			m.UndefinedVars = nil
+			//m.WorkSpaceVars[m.UndefinedVars]
+			//m.UndefinedVars = nil
 
-			wsName := m.app.CurrentEditor().Dmm().Name
+			wsName := m.UndefinedVars[0].MapName
 			delete(m.WorkSpaceVars, wsName)
+			m.UndefinedVars = nil
 		}
 		imgui.EndChild()
 	}

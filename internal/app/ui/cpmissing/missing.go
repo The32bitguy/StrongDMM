@@ -68,6 +68,7 @@ func (m *Missing) LookForUndefinedVariables(dme *dmenv.Dme, data *dmmap.Dmm) (Un
 							VarValue: fmt.Sprintf("%v", prefVal),
 							X:        instance.Coord().X, Y: instance.Coord().Y, Z: instance.Coord().Z,
 							PrefabInfo: uint64(instance.Id()),
+							MapName:    m.app.CurrentEditor().Dmm().Name,
 						})
 
 						log.Printf("undefined var edit:%s,  %s", prefab.Path(), prefVal)

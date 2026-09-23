@@ -255,9 +255,31 @@ func (a *app) loadMap(path string, workspace *workspace.Workspace) {
 						"%s", dmm.Name, prefabsNames,
 				),
 			})
+			UndefinedVars := make(map[int][]dmmap.UndefinedVar)
+
+			for _, prefabLoc := range unknownPrefabs {
+				// Assuming 'key' is the int map key you want to group by (e.g., 0 or a specific ID)
+				key := 0
+
+				UndefinedVars[key] = append(UndefinedVars[key], dmmap.UndefinedVar{
+					Path:       prefabLoc.Prefab.Path(),
+					VarName:    "MISSINGPREFAB",
+					VarValue:   "MISSINGPREFAB",
+					X:          prefabLoc.X,
+					Y:          prefabLoc.Y,
+					Z:          prefabLoc.Z,
+					PrefabInfo: uint64(prefabLoc.Prefab.Id()),
+					MapName:    dmm.Name,
+				})
+			}
+			if a.layout.Missing.WorkSpaceVars == nil {
+				a.layout.Missing.WorkSpaceVars = make(map[string][]dmmap.UndefinedVar)
+			}
+			a.layout.Missing.UndefinedVars = UndefinedVars[0]
+			a.layout.Missing.WorkSpaceVars[dmm.Name] = UndefinedVars[0]
+
 		}
 	}
-
 	a.layout.Search.Free()
 
 	runtime.GC()

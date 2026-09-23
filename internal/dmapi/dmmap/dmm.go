@@ -2,10 +2,10 @@ package dmmap
 
 import (
 	"path/filepath"
-	"sdmm/internal/dmapi/dmmap/dmmdata/dmmprefab"
 
 	"sdmm/internal/dmapi/dmenv"
 	"sdmm/internal/dmapi/dmmap/dmmdata"
+	"sdmm/internal/dmapi/dmmap/dmmdata/dmmprefab"
 	"sdmm/internal/util"
 
 	"github.com/rs/zerolog/log"
@@ -109,6 +109,12 @@ type UndefinedVar struct {
 	VarValue   string
 	X, Y, Z    int
 	PrefabInfo uint64
+	MapName    string
+}
+
+type PrefabAndLocation struct {
+	Prefab  *dmmprefab.Prefab
+	X, Y, Z int
 }
 
 type UnknownType struct {
@@ -116,8 +122,8 @@ type UnknownType struct {
 	X, Y, Z int
 }
 
-func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*dmmprefab.Prefab) {
-	unknownPrefabs = make(map[string]*dmmprefab.Prefab)
+func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknownPrefabs map[string]*PrefabAndLocation) {
+	unknownPrefabs = make(map[string]*PrefabAndLocation)
 	dmm = &Dmm{
 		Name:  filepath.Base(data.Filepath),
 		Path:  newDmmPath(dme.RootDir, data),
@@ -141,7 +147,14 @@ func New(dme *dmenv.Dme, data *dmmdata.DmmData, backup string) (dmm *Dmm, unknow
 						tile.InstancesAdd(PrefabStorage.Put(prefab))
 					} else {
 						log.Print("unknown prefab:", prefab.Path())
-						unknownPrefabs[prefab.Path()] = prefab
+						// Construct the struct and store its pointer in the map directly
+						unknownPrefabs[prefab.Path()] = &PrefabAndLocation{
+							Prefab: prefab,
+							X:      tile.Coord.X,
+							Y:      tile.Coord.Y,
+							Z:      tile.Coord.Z,
+						}
+
 					}
 				}
 

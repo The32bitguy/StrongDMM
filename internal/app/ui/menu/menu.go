@@ -245,7 +245,7 @@ func (m *Menu) Process() {
 		}),
 
 		w.Menu("Anti-Patterns", w.Layout{
-			w.MenuItem("Undefined Variables", m.app.DoUndefinedWindow).Shortcut("F5").
+			w.MenuItem("Undefined Variables", m.app.DoUndefinedWindow).Shortcut("F6").
 				Icon(icon.WindowRestore),
 		}),
 
