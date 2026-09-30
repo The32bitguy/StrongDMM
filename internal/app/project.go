@@ -244,16 +244,17 @@ func (a *app) loadMap(path string, workspace *workspace.Workspace) {
 			// Build the string
 			var prefabsNames string
 			for _, path := range prefabPaths {
-				prefabsNames += " - " + path + "\n"
+				prefabsNames += path + "\n"
 			}
 
 			dialog.Open(dialog.TypeInformation{
-				Title: "Unknown Types [WIP]",
+				Title: "Unknown Types",
 				Information: fmt.Sprintf(
 					"There are unknown types on the map: %s\n"+
-						"Types below will be discarded on save:\n"+
+						"Types below will be discarded on save:\n\n"+
 						"%s", dmm.Name, prefabsNames,
 				),
+				AllowCopy: true,
 			})
 			UndefinedVars := make(map[int][]dmmap.UndefinedVar)
 
