@@ -116,7 +116,7 @@ func (ws *WsMap) processCanvasCameraMirror() {
 		camera.Scale = activeCamera.Scale
 	}
 
-	if ws.app.Prefs().Editor.MirorCanvasCrossApp != true {
+	if ws.app.Prefs().Editor.MirrorCanvasCrossApp != true {
 		return
 	}
 
