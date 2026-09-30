@@ -10,10 +10,7 @@ import (
 	"sdmm/internal/app/ui/layout/lnode"
 	"sdmm/internal/app/window"
 
-	//for undefined variables maybe
-
 	"sdmm/internal/dmapi/dmmap"
-
 	"sdmm/internal/dmapi/dmmap/dmmdata/dmmprefab"
 	"sdmm/internal/dmapi/dmmap/dmminstance"
 	"sdmm/internal/env"
