@@ -48,7 +48,6 @@ func (m *Missing) LookForUndefinedVariables(dme *dmenv.Dme, data *dmmap.Dmm) (Un
 	}
 
 	for tileIndex := range data.Tiles {
-		//tile := m.app.CurrentEditor().Dmm().GetTile(util.Point{X: x, Y: y, Z: z})
 		for _, instance := range data.Tiles[tileIndex].Instances() {
 
 			prefab := instance.Prefab()
@@ -90,7 +89,6 @@ func (m *Missing) LookForMissingTypes(dme *dmenv.Dme, data *dmmap.Dmm) (Undefine
 	}
 
 	for tileIndex := range data.Tiles {
-		//tile := m.app.CurrentEditor().Dmm().GetTile(util.Point{X: x, Y: y, Z: z})
 		for _, instance := range data.Tiles[tileIndex].Instances() {
 
 			prefab := instance.Prefab()
@@ -99,7 +97,6 @@ func (m *Missing) LookForMissingTypes(dme *dmenv.Dme, data *dmmap.Dmm) (Undefine
 				if !prefab.Vars().HasParent() {
 					prefab.Vars().LinkParent(obj.Vars)
 				}
-				//data.Tiles[tileIndex].InstancesAdd(dmmap.PrefabStorage.Put(prefab))
 				for _, varName := range prefab.Vars().Iterate() { //start of undef
 					//if the value does not exist it gives "", false. Hence _, exists
 					if _, exists := obj.Vars.Value(varName); !exists {

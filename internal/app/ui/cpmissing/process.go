@@ -32,7 +32,6 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 					vars = dmvars.Delete(vars, varName)
 					instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
 
-					//m.app.SyncPrefabs()
 					m.app.SyncVarEditor()
 					if m.app.CurrentEditor() != nil {
 						m.app.CurrentEditor().FocusCameraOnPosition(instance.Coord())
@@ -61,10 +60,7 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 					m.app.CommandStorage().Push(command.Make("Removed Undefined", func() {
 						vars = dmvars.Set(vars, varName, undef.VarValue)
 						instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
-						//m.app.SyncPrefabs()
 						m.app.SyncVarEditor()
-						//m.app.CurrentEditor().FocusCameraOnPosition(instance.Coord())
-						//m.app.CurrentEditor().InstanceSelect(instance)
 						m.UndefinedVars = append(m.UndefinedVars[:i], append([]dmmap.UndefinedVar{undef}, m.UndefinedVars[i:]...)...)
 
 						if m.WorkSpaceVars == nil {
@@ -76,10 +72,7 @@ func (m *Missing) removeUndefinedVariableFromPrefab(undef dmmap.UndefinedVar, i 
 					}, func() {
 						vars = dmvars.Delete(vars, varName)
 						instance.SetPrefab(dmmprefab.New(dmmprefab.IdNone, prefab.Path(), vars))
-						//m.app.SyncPrefabs()
 						m.app.SyncVarEditor()
-						//m.app.CurrentEditor().FocusCameraOnPosition(instance.Coord())
-						//m.app.CurrentEditor().InstanceSelect(instance)
 						m.UndefinedVars = append(m.UndefinedVars[:i], m.UndefinedVars[i+1:]...)
 
 						if wsVars, exists := m.WorkSpaceVars[wsName]; exists {
@@ -171,9 +164,6 @@ func (m *Missing) ShowControls() {
 			imgui.TableSetColumnIndex(2)
 			imgui.Text(undef.VarName)
 
-			//imgui.TableSetColumnIndex(3)
-			//imgui.Text(undef.VarValue)
-
 			imgui.TableSetColumnIndex(3)
 			imgui.BeginGroup()
 			buttonLabelJump := fmt.Sprintf(icon.Search+"##%d", i)
@@ -208,8 +198,6 @@ func (m *Missing) ShowControls() {
 		}
 		imgui.EndTable()
 		if imgui.Button("Dismiss") {
-			//m.WorkSpaceVars[m.UndefinedVars]
-			//m.UndefinedVars = nil
 
 			wsName := m.UndefinedVars[0].MapName
 			delete(m.WorkSpaceVars, wsName)
