@@ -125,6 +125,11 @@ func (ws *WsMap) processCanvasCameraMirror() {
 		activeCamera.Level != ws.lastCamLevel ||
 		activeCamera.Scale != ws.lastCamScale
 
+	//let local changes apply
+	if activeCamera.Level != ws.lastCamLevel {
+		ws.paneMap.SetActiveLevel(max(1, min(activeCamera.Level, ws.paneMap.Dmm().MaxZ)))
+	}
+
 	var internalDir string
 
 	userHomeDir, err := os.UserHomeDir()
@@ -170,6 +175,8 @@ func (ws *WsMap) processCanvasCameraMirror() {
 				activeCamera.ShiftX = float32(shiftX)
 				activeCamera.ShiftY = float32(shiftY)
 				activeCamera.Level = level
+				ws.paneMap.SetActiveLevel((max(1, min(level, ws.paneMap.Dmm().MaxZ))))
+
 				activeCamera.Scale = float32(scale)
 
 				if camera := ws.paneMap.Canvas().Render().Camera; camera != activeCamera {
@@ -178,7 +185,7 @@ func (ws *WsMap) processCanvasCameraMirror() {
 					camera.Level = activeCamera.Level
 					camera.Scale = activeCamera.Scale
 				}
-
+				ws.paneMap.Canvas().Render().SetActiveLevel(ws.paneMap.Dmm(), (max(1, min(level, ws.paneMap.Dmm().MaxZ))))
 				ws.lastCamX = activeCamera.ShiftX
 				ws.lastCamY = activeCamera.ShiftY
 				ws.lastCamLevel = activeCamera.Level
